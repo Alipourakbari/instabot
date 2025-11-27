@@ -6,11 +6,19 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 import logging
 
 # تنظیمات لاگ
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
 logger = logging.getLogger(__name__)
 
 # دریافت توکن از متغیر محیطی
 TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN')
+
+# بررسی وجود توکن
+if not TELEGRAM_TOKEN:
+    logger.error("❌ TELEGRAM_TOKEN not found in environment variables!")
+    exit(1)
 
 # 🎯 دسته‌بندی‌های تحلیل ترند
 CATEGORIES = {
@@ -85,9 +93,6 @@ class TrendAnalyzerBot:
             'taylorswift': {'likes_range': (1500000, 6000000), 'comment_ratio': 0.05},
             'blackpinkofficial': {'likes_range': (2000000, 8000000), 'comment_ratio': 0.04},
             'lalalalisa_m': {'likes_range': (1000000, 3000000), 'comment_ratio': 0.035},
-            'roses_are_rosie': {'likes_range': (800000, 2500000), 'comment_ratio': 0.03},
-            'jennierubyjane': {'likes_range': (1500000, 4000000), 'comment_ratio': 0.04},
-            'sooyaaa__': {'likes_range': (700000, 2000000), 'comment_ratio': 0.025},
             'default': {'likes_range': (100000, 1000000), 'comment_ratio': 0.025}
         }
         
@@ -191,14 +196,14 @@ async def brainrot_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await update.message.reply_text(message)
 
+async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """مدیریت خطاها"""
+    logger.error(f"Error: {context.error}")
+
 def main():
     """تابع اصلی"""
     try:
-        print("🚀 Starting Instagram Trend Bot...")
-        
-        if not TELEGRAM_TOKEN:
-            print("❌ TELEGRAM_TOKEN not found! Please set it in environment variables.")
-            return
+        logger.info("🚀 Starting Instagram Trend Bot...")
         
         # ایجاد اپلیکیشن
         application = Application.builder().token(TELEGRAM_TOKEN).build()
@@ -209,14 +214,17 @@ def main():
         application.add_handler(CommandHandler("kpop", kpop_command))
         application.add_handler(CommandHandler("brainrot", brainrot_command))
         
-        print("✅ Bot is ready!")
-        print("🤖 Available commands: /start, /global, /kpop, /brainrot")
+        # مدیریت خطا
+        application.add_error_handler(error_handler)
+        
+        logger.info("✅ Bot is ready!")
+        logger.info("🤖 Available commands: /start, /global, /kpop, /brainrot")
         
         # اجرای بات
         application.run_polling()
         
     except Exception as e:
-        print(f"❌ Error starting bot: {e}")
+        logger.error(f"❌ Error starting bot: {e}")
 
 if __name__ == "__main__":
     main()
